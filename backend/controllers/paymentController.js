@@ -45,8 +45,8 @@ const createPayment = async (req, res, next) => {
     if (paymentType === 'final') {
       const exitTime = paymentDate ? new Date(paymentDate) : new Date();
       const elapsedMs = exitTime - new Date(record.entryTime);
-      const elapsedHours = Math.ceil(elapsedMs / (1000 * 60 * 60));
-      const totalAmount = Math.max(elapsedHours, 1) * record.hourlyRate;
+      const elapsedHours = elapsedMs / (1000 * 60 * 60);
+      const totalAmount = Math.max(1, Math.ceil(elapsedHours)) * record.hourlyRate;
       const newAmountPaid = record.amountPaid + amount;
       const balanceDue = totalAmount - newAmountPaid;
 

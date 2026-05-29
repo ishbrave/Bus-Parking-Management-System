@@ -1,3 +1,4 @@
+const Payment = require('../models/Payment');
 const ParkingRecord = require('../models/ParkingRecord');
 const ParkingSpace = require('../models/ParkingSpace');
 
@@ -10,11 +11,10 @@ const getDashboardStats = async (req, res, next) => {
     const pendingPayments = await ParkingRecord.countDocuments({ paymentStatus: { $in: ['Pending', 'Partially Paid'] } });
     const paidRecords = await ParkingRecord.countDocuments({ paymentStatus: 'Paid' });
 
-    const paidAgg = await ParkingRecord.aggregate([
-      { $match: { paymentStatus: 'Paid' } },
-      { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' } } },
+    const paymentAgg = await Payment.aggregate([
+      { $group: { _id: null, totalRevenue: { $sum: '$amount' } } },
     ]);
-    const totalRevenue = paidAgg.length > 0 ? paidAgg[0].totalRevenue : 0;
+    const totalRevenue = paymentAgg.length > 0 ? paymentAgg[0].totalRevenue : 0;
 
     const statusData = await ParkingRecord.aggregate([
       { $group: { _id: '$paymentStatus', count: { $sum: 1 } } },
@@ -42,19 +42,23 @@ const getDailyIncomeReport = async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const matchStage = { paymentStatus: 'Paid' };
+    const matchStage = {};
     if (startDate || endDate) {
-      matchStage.exitTime = {};
-      if (startDate) matchStage.exitTime.$gte = new Date(startDate);
-      if (endDate) matchStage.exitTime.$lte = new Date(endDate);
+      matchStage.paymentDate = {};
+      if (startDate) matchStage.paymentDate.$gte = new Date(startDate);
+      if (endDate) {
+        const ed = new Date(endDate);
+        ed.setUTCHours(23, 59, 59, 999);
+        matchStage.paymentDate.$lte = ed;
+      }
     }
 
-    const report = await ParkingRecord.aggregate([
+    const report = await Payment.aggregate([
       { $match: matchStage },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$exitTime' } },
-          totalAmount: { $sum: '$totalAmount' },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$paymentDate' } },
+          totalAmount: { $sum: '$amount' },
           count: { $sum: 1 },
         },
       },

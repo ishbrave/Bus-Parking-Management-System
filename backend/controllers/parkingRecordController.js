@@ -101,8 +101,8 @@ const checkoutParkingRecord = async (req, res, next) => {
 
     const exitTime = new Date();
     const elapsedMs = exitTime - new Date(record.entryTime);
-    const elapsedHours = Math.ceil(elapsedMs / (1000 * 60 * 60));
-    const totalAmount = Math.max(elapsedHours, 1) * record.hourlyRate;
+    const elapsedHours = elapsedMs / (1000 * 60 * 60);
+    const totalAmount = Math.max(1, Math.ceil(elapsedHours)) * record.hourlyRate;
     const balanceDue = totalAmount - record.amountPaid;
 
     res.status(200).json({

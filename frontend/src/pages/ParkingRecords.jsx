@@ -23,6 +23,16 @@ const partialSchema = z.object({
   receivedBy: z.string().min(1, 'Receiver name is required'),
 });
 
+function toLocalDatetimeStr(date) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
 function elapsedDisplay(entryTime, exitTime) {
   const start = new Date(entryTime);
   const end = exitTime ? new Date(exitTime) : new Date();
@@ -133,22 +143,17 @@ export default function ParkingRecords() {
   };
 
   const openEdit = (row) => {
-    const formatDate = (d) => {
-      if (!d) return '';
-      const dt = new Date(d);
-      return dt.toISOString().slice(0, 16);
-    };
     createForm.reset({
       bus: row.bus?._id || '',
       parkingSpace: row.parkingSpace?._id || '',
-      entryTime: formatDate(row.entryTime),
+      entryTime: toLocalDatetimeStr(row.entryTime),
       hourlyRate: row.hourlyRate || 500,
     });
     openModal('edit', row);
   };
 
   const openCreate = () => {
-    const nowStr = new Date().toISOString().slice(0, 16);
+    const nowStr = toLocalDatetimeStr(new Date());
     createForm.reset({ bus: '', parkingSpace: '', entryTime: nowStr, hourlyRate: 500 });
     openModal('create');
   };
